@@ -32,6 +32,25 @@
                     allowfullscreen>
                 </iframe>
             </div>
+            <!-- Timeline Scrubber -->
+            <div class="timeline-scrubber-container">
+                <div class="timeline-scrubber-bar">
+                    <div class="timeline-scrubber-progress" id="scrubberProgress"></div>
+                    <div class="timeline-scrubber-bookmarks" id="scrubberBookmarks"></div>
+                    <input 
+                        type="range" 
+                        id="scrubberInput" 
+                        class="timeline-scrubber-input" 
+                        min="0" 
+                        max="100" 
+                        value="0"
+                    >
+                </div>
+                <div class="timeline-scrubber-labels">
+                    <span class="timeline-label-start" id="scrubberStart">0:00</span>
+                    <span class="timeline-label-duration" id="scrubberDuration">0:00</span>
+                </div>
+            </div>
         </div>
 
         <!-- Right Section: Timestamp Display & Timeline -->

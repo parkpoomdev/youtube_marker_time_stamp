@@ -8,12 +8,20 @@ const errorMsg = document.getElementById('errorMsg');
 const appendBtn = document.getElementById('appendBtn');
 const timelineList = document.getElementById('timelineList');
 
+// Scrubber elements
+const scrubberInput = document.getElementById('scrubberInput');
+const scrubberProgress = document.getElementById('scrubberProgress');
+const scrubberBookmarks = document.getElementById('scrubberBookmarks');
+const scrubberStart = document.getElementById('scrubberStart');
+const scrubberDuration = document.getElementById('scrubberDuration');
+
 // State
 let ytTimer = null;
 let currentVideoId = null;
 let playerInstance = null;
 let currentTime = 0;
 let bookmarks = [];
+let videoDuration = 0;
 
 // Load bookmarks from session storage on page load
 function loadBookmarksFromStorage() {
@@ -81,14 +89,27 @@ function loadYouTubeVideo() {
         return;
     }
     
+    // Save bookmarks for previous video before loading new one
+    if (currentVideoId && currentVideoId !== videoId) {
+        saveVideoBookmarks(currentVideoId);
+    }
+    
     // Set video ID and load iframe
     currentVideoId = videoId;
+    
+    // Load bookmarks for new video
+    loadVideoBookmarks(videoId);
     
     // Remove previous player if exists
     playerInstance = null;
     
+    // Reset scrubber
+    videoDuration = 0;
+    if (scrubberProgress) scrubberProgress.style.width = '0%';
+    if (scrubberInput) scrubberInput.value = 0;
+    
     // Load iframe with proper parameters
-    youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&controls=1&modestbranding=1`;
+    youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&controls=1&modestbranding=1&autohide=0`;
     
     // Clear previous timer
     if (ytTimer) {
@@ -176,6 +197,11 @@ function updateDisplay(seconds) {
     timestampValue.textContent = formatted;
     timestampRaw.textContent = raw + 's';
     
+    // Update scrubber bar
+    if (videoDuration > 0) {
+        updateScrubber(seconds, videoDuration);
+    }
+    
     // Add pulse animation
     timestampValue.classList.add('updating');
     setTimeout(() => {
@@ -209,6 +235,19 @@ window.onYouTubeIframeAPIReady = function() {
 function onPlayerReady(event) {
     console.log('YouTube player is ready');
     playerInstance = event.target;
+    
+    // Get video duration and setup scrubber
+    try {
+        videoDuration = event.target.getDuration();
+        if (videoDuration > 0) {
+            renderScrubberBookmarks(videoDuration);
+            if (scrubberInput) {
+                scrubberInput.max = videoDuration;
+            }
+        }
+    } catch (e) {
+        console.log('Could not get video duration:', e);
+    }
     
     // Start timestamp tracking
     if (ytTimer) {
@@ -295,6 +334,11 @@ function renderTimeline() {
     if (bookmarks.length === 0) {
         timelineList.innerHTML = '<p class="timeline-empty">No bookmarks yet</p>';
         return;
+    }
+    
+    // Re-render scrubber bookmarks when timeline changes
+    if (videoDuration > 0) {
+        renderScrubberBookmarks(videoDuration);
     }
     
     timelineList.innerHTML = bookmarks.map(bookmark => `
@@ -479,9 +523,97 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Video-specific bookmark storage functions
+function saveVideoBookmarks(videoId) {
+    if (!videoId) return;
+    const key = 'bookmarks_' + videoId;
+    sessionStorage.setItem(key, JSON.stringify(bookmarks));
+    console.log('Saved ' + bookmarks.length + ' bookmarks for video ' + videoId);
+}
+
+function loadVideoBookmarks(videoId) {
+    if (!videoId) {
+        bookmarks = [];
+        return;
+    }
+    const key = 'bookmarks_' + videoId;
+    const stored = sessionStorage.getItem(key);
+    if (stored) {
+        try {
+            bookmarks = JSON.parse(stored);
+            console.log('Loaded ' + bookmarks.length + ' bookmarks for video ' + videoId);
+        } catch (e) {
+            console.log('Error loading bookmarks for video ' + videoId + ':', e);
+            bookmarks = [];
+        }
+    } else {
+        bookmarks = [];
+    }
+}
+
+// Timeline scrubber functions
+function updateScrubber(time, duration) {
+    if (!scrubberProgress || !scrubberInput || !scrubberStart || !scrubberDuration) return;
+    
+    const percent = (time / duration) * 100;
+    scrubberProgress.style.width = percent + '%';
+    scrubberInput.value = time;
+    scrubberInput.max = duration;
+    scrubberStart.textContent = formatTime(time);
+    scrubberDuration.textContent = formatTime(duration);
+}
+
+function renderScrubberBookmarks(duration) {
+    if (!scrubberBookmarks) return;
+    
+    // Clear existing markers
+    scrubberBookmarks.innerHTML = '';
+    
+    // Add markers for each bookmark
+    bookmarks.forEach(bookmark => {
+        const marker = document.createElement('div');
+        marker.className = 'scrubber-bookmark-marker';
+        const percent = (bookmark.time / duration) * 100;
+        marker.style.left = percent + '%';
+        marker.title = bookmark.title || 'Bookmark';
+        marker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playAtBookmark(bookmark.id);
+        });
+        scrubberBookmarks.appendChild(marker);
+    });
+}
+
+// Setup scrubber event listeners
+function setupScrubberListeners() {
+    if (!scrubberInput) return;
+    
+    // Scrubber input change (dragging)
+    scrubberInput.addEventListener('input', (e) => {
+        const time = parseFloat(e.target.value);
+        if (playerInstance && playerInstance.seekTo) {
+            playerInstance.seekTo(time, true);
+        }
+    });
+    
+    // Scrubber bar click (seek)
+    const scrubberBar = document.querySelector('.timeline-scrubber-bar');
+    if (scrubberBar) {
+        scrubberBar.addEventListener('click', (e) => {
+            const rect = scrubberBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const time = percent * videoDuration;
+            if (playerInstance && playerInstance.seekTo) {
+                playerInstance.seekTo(time, true);
+            }
+        });
+    }
+}
+
 window.addEventListener('load', () => {
     loadYouTubeAPI();
     loadBookmarksFromStorage();
+    setupScrubberListeners();
     if (bookmarks.length > 0) {
         renderTimeline();
     }
