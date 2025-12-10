@@ -32,6 +32,8 @@
                     allowfullscreen>
                 </iframe>
             </div>
+            <!-- React Timeline Component -->
+            <div id="react-timeline-root"></div>
             <!-- Timeline Scrubber -->
             <div class="timeline-scrubber-container">
                 <div class="timeline-scrubber-bar">
@@ -75,6 +77,14 @@
         </div>
     </div>
 
+    <!-- React and ReactDOM from CDN (development versions for Babel) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- React Timeline Component -->
+    <script type="text/babel" src="timeline-component.jsx"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>

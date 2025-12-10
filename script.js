@@ -202,6 +202,9 @@ function updateDisplay(seconds) {
         updateScrubber(seconds, videoDuration);
     }
     
+    // Update React timeline component
+    updateReactTimeline();
+    
     // Add pulse animation
     timestampValue.classList.add('updating');
     setTimeout(() => {
@@ -244,6 +247,8 @@ function onPlayerReady(event) {
             if (scrubberInput) {
                 scrubberInput.max = videoDuration;
             }
+            // Update React timeline with duration
+            updateReactTimeline();
         }
     } catch (e) {
         console.log('Could not get video duration:', e);
@@ -333,6 +338,7 @@ function addBookmark() {
 function renderTimeline() {
     if (bookmarks.length === 0) {
         timelineList.innerHTML = '<p class="timeline-empty">No bookmarks yet</p>';
+        updateReactTimeline();
         return;
     }
     
@@ -340,6 +346,9 @@ function renderTimeline() {
     if (videoDuration > 0) {
         renderScrubberBookmarks(videoDuration);
     }
+    
+    // Update React timeline component
+    updateReactTimeline();
     
     timelineList.innerHTML = bookmarks.map(bookmark => `
         <div class="timeline-item" data-id="${bookmark.id}">
@@ -534,6 +543,7 @@ function saveVideoBookmarks(videoId) {
 function loadVideoBookmarks(videoId) {
     if (!videoId) {
         bookmarks = [];
+        updateReactTimeline();
         return;
     }
     const key = 'bookmarks_' + videoId;
@@ -549,6 +559,7 @@ function loadVideoBookmarks(videoId) {
     } else {
         bookmarks = [];
     }
+    updateReactTimeline();
 }
 
 // Timeline scrubber functions
@@ -610,6 +621,32 @@ function setupScrubberListeners() {
     }
 }
 
+// Bridge functions for React component
+window.getBookmarks = function() {
+    return {
+        bookmarks: bookmarks,
+        duration: videoDuration,
+        currentTime: currentTime
+    };
+};
+
+window.seekToTime = function(time) {
+    if (playerInstance && playerInstance.seekTo) {
+        try {
+            playerInstance.seekTo(time, true);
+        } catch (e) {
+            console.log('Cannot seek, player may not be ready');
+        }
+    }
+};
+
+// Update React timeline component
+function updateReactTimeline() {
+    if (window.updateTimeline && typeof window.updateTimeline === 'function') {
+        window.updateTimeline(bookmarks, videoDuration, currentTime);
+    }
+}
+
 window.addEventListener('load', () => {
     loadYouTubeAPI();
     loadBookmarksFromStorage();
@@ -617,6 +654,8 @@ window.addEventListener('load', () => {
     if (bookmarks.length > 0) {
         renderTimeline();
     }
+    // Initial update for React timeline
+    setTimeout(updateReactTimeline, 1000);
 });
 
 // Cleanup on page unload
