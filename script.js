@@ -298,17 +298,7 @@ function onPlayerError(event) {
     showError('Video Error: ' + errorMsg);
 }
 
-// Event listeners
-loadBtn.addEventListener('click', loadYouTubeVideo);
-
-youtubeUrlInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        loadYouTubeVideo();
-    }
-});
-
-// Bookmark functionality
-appendBtn.addEventListener('click', addBookmark);
+// Event listeners - will be set up after DOM is ready
 
 // Bookmark function
 function addBookmark() {
@@ -336,15 +326,15 @@ function addBookmark() {
 
 // Render timeline with bookmarks
 function renderTimeline() {
+    // Always clear and re-render scrubber bookmarks when timeline changes
+    if (videoDuration > 0) {
+        renderScrubberBookmarks(videoDuration);
+    }
+    
     if (bookmarks.length === 0) {
         timelineList.innerHTML = '<p class="timeline-empty">No bookmarks yet</p>';
         updateReactTimeline();
         return;
-    }
-    
-    // Re-render scrubber bookmarks when timeline changes
-    if (videoDuration > 0) {
-        renderScrubberBookmarks(videoDuration);
     }
     
     // Update React timeline component
@@ -648,6 +638,27 @@ function updateReactTimeline() {
 }
 
 window.addEventListener('load', () => {
+    // Set up event listeners now that DOM is ready
+    if (loadBtn) {
+        loadBtn.addEventListener('click', loadYouTubeVideo);
+    } else {
+        console.error('Load button not found!');
+    }
+    
+    if (youtubeUrlInput) {
+        youtubeUrlInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                loadYouTubeVideo();
+            }
+        });
+    }
+    
+    // Bookmark functionality
+    if (appendBtn) {
+        appendBtn.addEventListener('click', addBookmark);
+    }
+    
+    // Initialize other features
     loadYouTubeAPI();
     loadBookmarksFromStorage();
     setupScrubberListeners();
