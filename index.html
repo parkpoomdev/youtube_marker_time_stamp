@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Real-time Timestamp Marker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Video Player Section -->
+        <div class="video-section">
+            <div class="video-header">
+                <div class="video-title">YouTube Video Player</div>
+                <div class="video-controls">
+                    <input 
+                        type="text" 
+                        id="youtubeUrl" 
+                        placeholder="Paste YouTube link here..."
+                        class="video-input"
+                    >
+                    <button id="loadBtn" class="btn-load">Load</button>
+                </div>
+                <div id="errorMsg" class="error-message"></div>
+            </div>
+            <div class="video-container">
+                <iframe 
+                    id="youtubePlayer" 
+                    class="youtube-iframe"
+                    title="YouTube player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Right Section: Timestamp Display & Timeline -->
+        <div class="timestamp-section">
+            <div class="timestamp-wrapper">
+                <h2>Real-time Timestamp</h2>
+                <div class="timestamp-display">
+                    <div class="timestamp-value" id="timestampValue">0:00</div>
+                    <div class="timestamp-raw" id="timestampRaw">0.00s</div>
+                </div>
+                <div class="timestamp-actions">
+                    <button id="appendBtn" class="btn-append">📌 Bookmark</button>
+                </div>
+                
+                <h3>Bookmarks Timeline</h3>
+                <div class="timeline-container">
+                    <div id="timelineList" class="timeline-list">
+                        <p class="timeline-empty">No bookmarks yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
